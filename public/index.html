@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitter Video Downloader</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1DA1F2;
+            --dark: #0F1419;
+            --accent: #FF6B9D;
+            --light: #F7F9FA;
+            --success: #00BA7C;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(29, 161, 242, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 107, 157, 0.2) 0%, transparent 50%);
+            pointer-events: none;
+            animation: pulse 8s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.8; }
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px 40px;
+            box-shadow: 
+                0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 20px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+            box-shadow: 0 10px 30px rgba(29, 161, 242, 0.3);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .logo svg {
+            width: 40px;
+            height: 40px;
+            fill: white;
+        }
+        
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }
+        
+        .subtitle {
+            color: #657786;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .input-group {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        input {
+            width: 100%;
+            padding: 18px 24px;
+            font-size: 1rem;
+            border: 2px solid #E1E8ED;
+            border-radius: 16px;
+            font-family: 'Work Sans', sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(29, 161, 242, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        input::placeholder {
+            color: #AAB8C2;
+        }
+        
+        .clear-btn {
+            position: absolute;
+            right: 12px;
+            background: #E1E8ED;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .clear-btn.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .clear-btn:hover {
+            background: #AAB8C2;
+            transform: scale(1.1);
+        }
+        
+        .download-btn {
+            width: 100%;
+            padding: 18px 32px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            font-family: 'Work Sans', sans-serif;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(29, 161, 242, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .download-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .download-btn:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(29, 161, 242, 0.5);
+        }
+        
+        .download-btn:active {
+            transform: translateY(-1px);
+        }
+        
+        .download-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .download-btn span {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .alert {
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .alert.error {
+            background: rgba(255, 107, 157, 0.1);
+            color: #E0245E;
+            border: 1px solid rgba(224, 36, 94, 0.2);
+        }
+        
+        .alert.success {
+            background: rgba(0, 186, 124, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(0, 186, 124, 0.2);
+        }
+        
+        .alert.info {
+            background: rgba(29, 161, 242, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(29, 161, 242, 0.2);
+        }
+        
+        .icon {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+        }
+        
+        .video-preview {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(29, 161, 242, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(29, 161, 242, 0.2);
+            display: none;
+        }
+        
+        .video-preview.visible {
+            display: block;
+            animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        
+        .video-info {
+            margin-bottom: 15px;
+        }
+        
+        .video-info strong {
+            display: block;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .quality-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .quality-btn {
+            padding: 10px 20px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            font-family: 'Work Sans', sans-serif;
+        }
+        
+        .quality-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .quality-btn.selected {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(29, 161, 242, 0.3);
+        }
+        
+        .instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 16px;
+            border: 1px dashed rgba(102, 126, 234, 0.3);
+        }
+        
+        .instructions h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 12px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #657786;
+            font-size: 0.9rem;
+            line-height: 1.8;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 40px 30px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .logo {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .logo svg {
+                width: 30px;
+                height: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                </svg>
+            </div>
+            <h1>Twitter Downloader</h1>
+            <p class="subtitle">Téléchargez des vidéos Twitter directement</p>
+        </div>
+        
+        <div class="input-group">
+            <div class="input-wrapper">
+                <input
+                    type="text"
+                    id="urlInput"
+                    placeholder="Collez l'URL du tweet ici..."
+                />
+                <button class="clear-btn" id="clearBtn">✕</button>
+            </div>
+        </div>
+        
+        <button class="download-btn" id="findBtn">
+            <span>🔍 Trouver la vidéo</span>
+        </button>
+        
+        <div class="video-preview" id="videoPreview">
+            <div class="video-info">
+                <strong>Qualités disponibles:</strong>
+            </div>
+            <div class="quality-selector" id="qualitySelector"></div>
+            <button class="download-btn" id="downloadBtn" style="margin-top: 15px;">
+                <span id="downloadBtnText">⬇ Télécharger</span>
+            </button>
+        </div>
+        
+        <div id="messageContainer"></div>
+        
+        <div class="instructions">
+            <h3>📖 Comment utiliser :</h3>
+            <ol>
+                <li>Copiez l'URL d'un tweet contenant une vidéo</li>
+                <li>Collez l'URL dans le champ ci-dessus</li>
+                <li>Cliquez sur "Trouver la vidéo"</li>
+                <li>Sélectionnez la qualité désirée</li>
+                <li>Cliquez sur "Télécharger" - la vidéo sera téléchargée directement</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api';
+        
+        const urlInput = document.getElementById('urlInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const findBtn = document.getElementById('findBtn');
+        const videoPreview = document.getElementById('videoPreview');
+        const qualitySelector = document.getElementById('qualitySelector');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadBtnText = document.getElementById('downloadBtnText');
+        const messageContainer = document.getElementById('messageContainer');
+        
+        let videoData = null;
+        let selectedQuality = null;
+        
+        function extractTweetId(url) {
+            const patterns = [
+                /twitter\.com\/\w+\/status\/(\d+)/,
+                /x\.com\/\w+\/status\/(\d+)/,
+                /^(\d+)$/
+            ];
+            
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) return match[1];
+            }
+            return null;
+        }
+        
+        function showMessage(type, text) {
+            messageContainer.innerHTML = `
+                <div class="alert ${type}">
+                    <span class="icon">
+                        ${type === 'error' ? '⚠️' : type === 'success' ? '✓' : 'ℹ️'}
+                    </span>
+                    <span>${text}</span>
+                </div>
+            `;
+        }
+        
+        function getQualityLabel(bitrate, quality) {
+            if (quality) return quality;
+            if (!bitrate) return 'Basse qualité';
+            if (bitrate >= 2000000) return 'HD 1080p';
+            if (bitrate >= 1000000) return 'HD 720p';
+            if (bitrate >= 500000) return 'SD 480p';
+            return 'Basse qualité';
+        }
+        
+        async function findVideo() {
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showMessage('error', 'Veuillez entrer une URL Twitter');
+                return;
+            }
+            
+            const tweetId = extractTweetId(url);
+            if (!tweetId) {
+                showMessage('error', 'URL Twitter invalide. Assurez-vous qu\'elle contient /status/...');
+                return;
+            }
+            
+            findBtn.disabled = true;
+            findBtn.innerHTML = '<span><span class="loader"></span>Recherche...</span>';
+            videoPreview.classList.remove('visible');
+            messageContainer.innerHTML = '';
+            
+            try {
+                showMessage('info', 'Récupération des informations de la vidéo...');
+                
+                const response = await fetch(`${API_BASE_URL}/video-info/${tweetId}`);
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Erreur lors de la récupération');
+                }
+                
+                videoData = data;
+                selectedQuality = 0;
+                
+                qualitySelector.innerHTML = '';
+                data.variants.forEach((variant, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = `quality-btn ${index === 0 ? 'selected' : ''}`;
+                    btn.textContent = getQualityLabel(variant.bitrate, variant.quality);
+                    btn.onclick = () => selectQuality(index);
+                    qualitySelector.appendChild(btn);
+                });
+                
+                videoPreview.classList.add('visible');
+                updateDownloadButton();
+                showMessage('success', 'Vidéo trouvée ! Sélectionnez la qualité désirée.');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showMessage('error', error.message || 'Impossible de récupérer la vidéo');
+            } finally {
+                findBtn.disabled = false;
+                findBtn.innerHTML = '<span>🔍 Trouver la vidéo</span>';
+            }
+        }
+        
+        function selectQuality(index) {
+            selectedQuality = index;
+            
+            const buttons = qualitySelector.querySelectorAll('.quality-btn');
+            buttons.forEach((btn, i) => {
+                btn.classList.toggle('selected', i === index);
+            });
+            
+            updateDownloadButton();
+        }
+        
+        function updateDownloadButton() {
+            if (videoData && selectedQuality !== null) {
+                const variant = videoData.variants[selectedQuality];
+                downloadBtnText.textContent = `⬇ Télécharger (${getQualityLabel(variant.bitrate, variant.quality)})`;
+            }
+        }
+        
+        async function downloadVideo() {
+            if (!videoData || selectedQuality === null) return;
+            
+            const variant = videoData.variants[selectedQuality];
+            const tweetId = extractTweetId(urlInput.value);
+            
+            downloadBtn.disabled = true;
+            downloadBtnText.innerHTML = '<span class="loader"></span>Téléchargement...';
+            
+            try {
+                const filename = `twitter_video_${tweetId}.mp4`;
+                const downloadUrl = `${API_BASE_URL}/download?url=${encodeURIComponent(variant.url)}&filename=${filename}`;
+                
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                showMessage('success', 'Téléchargement démarré ! Vérifiez vos téléchargements.');
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                showMessage('error', 'Erreur lors du téléchargement');
+            } finally {
+                downloadBtn.disabled = false;
+                updateDownloadButton();
+            }
+        }
+        
+        urlInput.addEventListener('input', () => {
+            clearBtn.classList.toggle('visible', urlInput.value.length > 0);
+        });
+        
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                findVideo();
+            }
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            urlInput.value = '';
+            clearBtn.classList.remove('visible');
+            videoPreview.classList.remove('visible');
+            messageContainer.innerHTML = '';
+        });
+        
+        findBtn.addEventListener('click', findVideo);
+        downloadBtn.addEventListener('click', downloadVideo);
+    </script>
+</body>
+</html>
